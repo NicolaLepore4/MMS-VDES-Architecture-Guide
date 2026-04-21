@@ -1,0 +1,6 @@
+{
+  "name": "MMS & VDES Architecture Guide",
+  "description": "An interactive educational schema explaining the communication architecture between ship and shore using MMS, MMTP, SMMP, and VDES.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
