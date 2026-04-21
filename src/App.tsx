@@ -200,7 +200,10 @@ const TRANSLATIONS: Record<Language, TranslationSet> = {
     endToEnd: "Fine-a-Fine",
     hopByHop: "Tratta-Tratta",
     protocolIndependenceTitle: "Perché SMMP e MMTP sono sempre presenti?",
-    protocolIndependenceDesc: "SMMP e MMTP sono i livelli 'nativi' del sistema MMS. Garantiscono che l'identità (URN) e la sicurezza del messaggio rimangano invariate dalla sorgente alla destinazione, indipendentemente dal fatto che il messaggio viaggi via radio o via cavo. Solo i livelli 1 e 2 cambiano per adattarsi al mezzo fisico."
+    protocolIndependenceDesc: "SMMP e MMTP sono i livelli 'nativi' del sistema MMS. Garantiscono che l'identità (URN) e la sicurezza del messaggio rimangano invariate dalla sorgente alla destinazione, indipendentemente dal fatto che il messaggio viaggi via radio o via cavo. Solo i livelli 1 e 2 cambiano per adattarsi al mezzo fisico.",
+    disclaimerTitle: "Disclaimer Legale e Informativo",
+    disclaimerText: "Questo sito è uno strumento didattico e simulativo. I riferimenti a standard internazionali (IALA, IEC, ITU) e ad aziende del settore (es. Sternula) sono forniti esclusivamente a scopo illustrativo e informativo. Non esiste alcuna affiliazione ufficiale o sponsorizzazione. Tutti i marchi, i nomi dei prodotti e i loghi appartengono ai rispettivi proprietari.",
+    educationalApp: "Applicazione a Scopo Educativo"
   },
   en: {
     title: "MMS / VDES Architecture Explorer",
@@ -287,7 +290,10 @@ const TRANSLATIONS: Record<Language, TranslationSet> = {
     endToEnd: "End-to-End",
     hopByHop: "Hop-by-Hop",
     protocolIndependenceTitle: "Why are SMMP and MMTP always present?",
-    protocolIndependenceDesc: "SMMP and MMTP are the 'native' MMS layers. They ensure the message's identity (URN) and security remain unchanged from source to destination, whether the message travels via radio or wire. Only levels 1 and 2 change to adapt to the physical medium."
+    protocolIndependenceDesc: "SMMP and MMTP are the 'native' MMS layers. They ensure the message's identity (URN) and security remain unchanged from source to destination, whether the message travels via radio or wire. Only levels 1 and 2 change to adapt to the physical medium.",
+    disclaimerTitle: "Legal & Informational Disclaimer",
+    disclaimerText: "This website is an educational and simulation tool. References to international standards (IALA, IEC, ITU) and industry companies (e.g., Sternula) are provided solely for illustrative and informational purposes. No official affiliation or sponsorship exists. All trademarks, product names, and logos belong to their respective owners.",
+    educationalApp: "Educational Purpose Application"
   }
 };
 
@@ -3037,12 +3043,39 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="mt-16 py-12 text-center text-slate-400 text-xs border-t border-slate-200 max-w-6xl mx-auto">
-        <p className="mb-4">© 2026 Maritime Systems Operational Guide • Design by AI Architect</p>
-        <div className="flex justify-center gap-6 opacity-50">
-          <span className="flex items-center gap-1"><Ship className="w-3 h-3" /> Shipside Ready</span>
-          <span className="flex items-center gap-1"><LandPlot className="w-3 h-3" /> Shoreside Integration</span>
-          <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> Cyber Secure</span>
+      {/* Footer / Disclaimer */}
+      <footer className="bg-slate-50 border-t border-slate-200 mt-20 py-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between gap-12">
+            <div className="max-w-md">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-blue-600 text-white rounded-lg">
+                  <Ship className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-black text-slate-900 tracking-tight uppercase">MMS Explorer</span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                {t.educationalApp}. Built for technical training and architectural visualization of VDES/MMS standards.
+              </p>
+            </div>
+            
+            <div className="max-w-xl bg-white p-6 rounded-2xl border border-slate-200">
+              <h4 className="flex items-center gap-2 text-[10px] font-black text-slate-900 uppercase tracking-widest mb-3">
+                <AlertTriangle className="w-3 h-3 text-amber-500" />
+                {t.disclaimerTitle}
+              </h4>
+              <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic">
+                {t.disclaimerText}
+              </p>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-center">
+            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">© 2026 Maritime Systems Operational Guide</span>
+            <div className="flex gap-6">
+               <span className="text-[10px] font-black text-slate-400">IALA G1139 Compliant</span>
+               <span className="text-[10px] font-black text-slate-400">SMMP/MMTP v1.0</span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
