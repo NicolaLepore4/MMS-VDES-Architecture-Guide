@@ -30,6 +30,19 @@ Interfaccia web interattiva per esplorare l'architettura MMS / VDES, con focus s
    `npm run dev`
 3. Apri il browser su `http://localhost:3000`
 
+## Deploy Su GitHub Pages
+
+Il repository include un workflow in [/.github/workflows/deploy.yml](.github/workflows/deploy.yml) che pubblica automaticamente la build su GitHub Pages a ogni push su `main`.
+
+Per attivarlo su GitHub:
+
+1. Vai in `Settings` del repository.
+2. Apri la sezione `Pages`.
+3. Imposta `Build and deployment` su `GitHub Actions`.
+4. Salva e fai push su `main`.
+
+Il sito sarà pubblicato con base path `/<repository>/`, quindi il file di configurazione Vite è già allineato a GitHub Pages.
+
 ## Script Utili
 
 - `npm run dev` avvia il server Vite in sviluppo.
