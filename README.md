@@ -2,7 +2,7 @@
 
 Interfaccia web interattiva per esplorare l'architettura MMS / VDES, con focus su incapsulamento, routing intelligente, sicurezza e simulazione di scenari operativi.
 CONSULTABILE IN:
-https://nicolalepore4.github.io/MMS-VDES-Architecture-Guide/
+https://nicolalepore4.github.io/MMS-VDES-Architecture-Guide
 
 ## Cosa trovi nell'app
 
