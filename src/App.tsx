@@ -15,7 +15,8 @@ import {
   AlertTriangle, 
   Ship, 
   Layers, 
-  MessageSquare 
+  MessageSquare,
+  Server
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -42,9 +43,11 @@ import { PacketDecoderView } from './components/PacketDecoderView';
 import { VdeSatView } from './components/VdeSatView';
 import { AisCongestionView } from './components/AisCongestionView';
 import { RModePntView } from './components/RModePntView';
+import { VDESControllerIntegration } from './components/VDESControllerIntegration';
+import { TeslaVdesProtocol } from './components/TeslaVdesProtocol';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<'architecture' | 'vdes' | 'simulation' | 'rmode' | 'decoder' | 'vdesat' | 'ais-congestion'>('architecture');
+  const [viewMode, setViewMode] = useState<'architecture' | 'vdes' | 'simulation' | 'rmode' | 'decoder' | 'vdesat' | 'ais-congestion' | 'vdes-controller' | 'tesla-vdes'>('architecture');
   const [lang, setLang] = useState<Language>('it');
   const t = TRANSLATIONS[lang];
   const [activeStepIdx, setActiveStepIdx] = useState(0);
@@ -90,20 +93,34 @@ export default function App() {
                <Radar className="w-3.5 h-3.5" />
                <span className="hidden sm:inline">{t.rmodeTitle}</span>
              </button>
-             <button 
-               onClick={() => setViewMode('vdesat')}
-               className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'vdesat' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
-             >
-               <Globe className="w-3.5 h-3.5" />
-               <span className="hidden sm:inline">{t.vdeSatView}</span>
-             </button>
-             <button 
-               onClick={() => setViewMode('ais-congestion')}
-               className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'ais-congestion' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
-             >
-               <Activity className="w-3.5 h-3.5" />
-               <span className="hidden sm:inline">{t.aisCongestionView}</span>
-             </button>
+              <button 
+                onClick={() => setViewMode('vdesat')}
+                className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'vdesat' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t.vdeSatView}</span>
+              </button>
+              <button 
+                onClick={() => setViewMode('vdes-controller')}
+                className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'vdes-controller' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
+              >
+                <Server className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">VDES Controller</span>
+               </button>
+               <button 
+                 onClick={() => setViewMode('tesla-vdes')}
+                 className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'tesla-vdes' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
+               >
+                 <Lock className="w-3.5 h-3.5" />
+                 <span className="hidden sm:inline">TESLA</span>
+               </button>
+               <button 
+                 onClick={() => setViewMode('ais-congestion')}
+                className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'ais-congestion' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t.aisCongestionView}</span>
+              </button>
              <button 
                onClick={() => setViewMode('decoder')}
                className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'decoder' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
@@ -230,16 +247,34 @@ export default function App() {
             >
               <PacketDecoderView lang={lang} />
             </motion.div>
-          ) : viewMode === 'vdesat' ? (
-            <motion.div
-              key="vdesat"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-            >
-              <VdeSatView lang={lang} />
-            </motion.div>
-          ) : viewMode === 'ais-congestion' ? (
+           ) : viewMode === 'vdesat' ? (
+             <motion.div
+               key="vdesat"
+               initial={{ opacity: 0, x: 20 }}
+               animate={{ opacity: 1, x: 0 }}
+               exit={{ opacity: 0, x: -20 }}
+             >
+               <VdeSatView lang={lang} />
+             </motion.div>
+            ) : viewMode === 'vdes-controller' ? (
+              <motion.div
+                key="vdes-controller"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <VDESControllerIntegration lang={lang} />
+              </motion.div>
+            ) : viewMode === 'tesla-vdes' ? (
+              <motion.div
+                key="tesla-vdes"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <TeslaVdesProtocol lang={lang} />
+              </motion.div>
+            ) : viewMode === 'ais-congestion' ? (
             <motion.div
               key="ais-congestion"
               initial={{ opacity: 0, x: 20 }}

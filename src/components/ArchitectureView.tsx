@@ -13,7 +13,8 @@ import {
   BookOpen, 
   ExternalLink,
   ChevronRight,
-  ChevronsRight
+  ChevronsRight,
+  Server
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Language, StepInfo, ProtocolInfo } from '../types';
@@ -316,26 +317,59 @@ export const BlockDiagram = ({
             <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[9px] px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl">
                Smart Routing: {routingPref.toUpperCase()} Active
             </div>
-          </div>
+           </div>
 
-          <DiagramArrow 
-            protocol={routingPref === 'vdes' ? "IEC 61162-450" : "TCP/IP Tunnel"} 
-            active 
-            onClick={() => onProtocolClick(routingPref === 'vdes' ? 'IEC 61162-450' : 'MMTP')} 
-          />
+            {/* TESLA Auth Layer (MMS-integrated) */}
+            <div onClick={() => onStepClick(2)} className="cursor-pointer transition-transform hover:scale-105 active:scale-95">
+              <DiagramBlock 
+                active={activeStepIdx === 2}
+                highlight={routingPref === 'vdes'}
+                color="blue"
+                icon={<Lock className="w-6 h-6" />}
+                title="TESLA Auth"
+                subtitle={routingPref === 'vdes' ? (lang === 'it' ? "Attivo" : "Active") : (lang === 'it' ? "Standby" : "Standby")}
+                lang={lang}
+              />
+            </div>
 
-          <div onClick={() => onStepClick(2)} className="cursor-pointer transition-transform hover:scale-105 active:scale-95">
-            <DiagramBlock 
-              active={activeStepIdx === 2}
-              highlight={routingPref === 'vdes'}
+            <DiagramArrow
+              protocol="TESLA MAC"
+              active={routingPref === 'vdes'}
               color="blue"
-              icon={<Radio className="w-6 h-6" />}
-              title="VDES Modem/PI"
-              subtitle={routingPref === 'vdes' ? (lang === 'it' ? "Link Attivo" : "Active Link") : (lang === 'it' ? "Standby" : "Standby")}
-              lang={lang}
             />
-          </div>
-        </div>
+
+            {/* VDES Controller */}
+            <div onClick={() => onStepClick(3)} className="cursor-pointer transition-transform hover:scale-105 active:scale-95">
+              <DiagramBlock 
+                active={activeStepIdx === 3}
+                highlight={routingPref === 'vdes'}
+                color="blue"
+                icon={<Server className="w-6 h-6" />}
+                title="VDES Controller"
+                subtitle={routingPref === 'vdes' ? (lang === 'it' ? "Driver Attivo" : "Driver Active") : (lang === 'it' ? "Standby" : "Standby")}
+                lang={lang}
+              />
+            </div>
+
+            <DiagramArrow
+              protocol="UDP / IEC 61162-450"
+              active={routingPref === 'vdes'}
+              color="blue"
+              onClick={() => onProtocolClick('IEC 61162-450')}
+            />
+
+            <div onClick={() => onStepClick(4)} className="cursor-pointer transition-transform hover:scale-105 active:scale-95">
+              <DiagramBlock 
+                active={activeStepIdx === 4}
+                highlight={routingPref === 'vdes'}
+                color="blue"
+                icon={<Radio className="w-6 h-6" />}
+                title="VDES Modem/PI"
+                subtitle={routingPref === 'vdes' ? (lang === 'it' ? "Link Attivo" : "Active Link") : (lang === 'it' ? "Standby" : "Standby")}
+                lang={lang}
+              />
+            </div>
+         </div>
         
         {/* Alternative IP Path Visual */}
         {routingPref === 'ip' && (
@@ -357,11 +391,11 @@ export const BlockDiagram = ({
         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
         <button 
           onClick={() => {
-            onStepClick(3);
+            onStepClick(5);
             onProtocolClick('VDES');
           }}
           className={`flex items-center gap-4 px-10 py-5 rounded-[2rem] border transition-all relative group
-            ${routingPref === 'vdes' ? (activeStepIdx === 3 ? 'bg-amber-100 border-amber-300 shadow-2xl scale-110' : 'bg-amber-50 border-amber-100 shadow-xl hover:scale-105') : 'bg-slate-50 border-slate-100 opacity-30 grayscale scale-95'}
+            ${routingPref === 'vdes' ? (activeStepIdx === 5 ? 'bg-amber-100 border-amber-300 shadow-2xl scale-110' : 'bg-amber-50 border-amber-100 shadow-xl hover:scale-105') : 'bg-slate-50 border-slate-100 opacity-30 grayscale scale-95'}
           `}
         >
            <Zap className={`w-6 h-6 animate-pulse ${routingPref === 'vdes' ? 'text-amber-500' : 'text-slate-400'}`} />
@@ -382,16 +416,16 @@ export const BlockDiagram = ({
           {lang === 'it' ? 'Segmento Terra (Destinazione)' : 'Shore Segment (Sink)'}
         </div>
         <div className="flex items-center">
-          <div onClick={() => onStepClick(4)} className="cursor-pointer transition-transform hover:scale-105 active:scale-95">
+          <div onClick={() => onStepClick(6)} className="cursor-pointer transition-transform hover:scale-105 active:scale-95">
             <DiagramBlock 
-              active={activeStepIdx === 4}
-              highlight={routingPref === 'vdes'}
-              color="emerald"
-              icon={<Database className="w-6 h-6" />}
-              title="Shore Base"
-              subtitle={routingPref === 'vdes' ? (lang === 'it' ? "Ricezione Attiva" : "Active Reception") : (lang === 'it' ? "Standby" : "Standby")}
-              lang={lang}
-            />
+                active={activeStepIdx === 6}
+                highlight={routingPref === 'vdes'}
+                color="emerald"
+                icon={<Database className="w-6 h-6" />}
+                title="Shore Base"
+                subtitle={routingPref === 'vdes' ? (lang === 'it' ? "Ricezione Attiva" : "Active Reception") : (lang === 'it' ? "Standby" : "Standby")}
+                lang={lang}
+              />
           </div>
 
           <DiagramArrow 
@@ -401,9 +435,9 @@ export const BlockDiagram = ({
             onClick={() => onProtocolClick('MMTP')} 
           />
 
-          <div onClick={() => onStepClick(5)} className="cursor-pointer transition-transform hover:scale-105 active:scale-95">
+          <div onClick={() => onStepClick(7)} className="cursor-pointer transition-transform hover:scale-105 active:scale-95">
             <DiagramBlock 
-              active={activeStepIdx === 5}
+              active={activeStepIdx === 7}
               highlight={true}
               color="emerald"
               icon={<Globe className="w-6 h-6" />}
@@ -415,18 +449,18 @@ export const BlockDiagram = ({
 
           <DiagramArrow protocol="MMTP / IP" active color="emerald" onClick={() => onProtocolClick('MMTP')} />
 
-          <div className="flex-1 flex flex-col items-center">
-             <div onClick={() => onStepClick(6)} className="cursor-pointer transition-transform hover:scale-105 active:scale-95">
-               <DiagramBlock 
-                active={activeStepIdx === 6}
-                highlight={true}
-                color="emerald"
-                icon={<MessageSquare className="w-6 h-6" />}
-                title="Dest. Agent"
-                subtitle="VTS / Port Auth"
-                lang={lang}
-               />
-             </div>
+           <div className="flex-1 flex flex-col items-center">
+               <div onClick={() => onStepClick(8)} className="cursor-pointer transition-transform hover:scale-105 active:scale-95">
+                 <DiagramBlock 
+                  active={activeStepIdx === 8}
+                  highlight={true}
+                  color="emerald"
+                  icon={<MessageSquare className="w-6 h-6" />}
+                  title="Dest. Agent"
+                  subtitle="VTS / Port Auth"
+                  lang={lang}
+                 />
+               </div>
              <button 
               onClick={() => onProtocolClick('SMMP')}
               className="text-[9px] font-bold text-emerald-600 mt-3 font-mono hover:bg-emerald-50 px-2 py-0.5 rounded-full transition-colors"
