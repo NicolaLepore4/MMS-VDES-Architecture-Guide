@@ -68,6 +68,24 @@ const TAB_OPTIONS: { key: TabKey; it: string; en: string }[] = [
   { key: 'essa', it: 'E-SSA & Collisioni', en: 'E-SSA & Collisions' },
 ];
 
+// ── Orbit geometry constants ──
+const ORBIT_START_X = 50;
+const ORBIT_END_X = 950;
+const ORBIT_START_Y = 120;
+const ORBIT_CONTROL_X = 500;
+const ORBIT_CONTROL_Y = 20;
+const ORBIT_END_Y = 120;
+const SHIP_X = 500;
+const SHIP_Y = 260;
+
+// ── Simulation step constants ──
+const PROGRESS_INCREMENT = 0.00003; // base increment per frame at speed 1
+const PACKET_PROGRESS_STEP = 0.022;
+const PACKET_SPAWN_THRESHOLD = 0.97;
+const COLLISION_SPAWN_THRESHOLD = 0.992;
+const COLLISION_TIMEOUT_MS = 2500;
+const MAX_PACKETS = 12;
+
 const STATIC_STARS = Array.from({ length: 60 }).map((_, i) => ({
   id: i,
   top: Math.random() * 100,
@@ -205,11 +223,12 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
   const [collisions, setCollisions] = useState<Collision[]>([]);
   const [packets, setPackets] = useState<Packet[]>([]);
 
-  /* ── Refs to avoid stale closures in rAF ── */
-  const lastTimeRef = useRef<number>(0);
-  const requestRef = useRef<number>(0);
-  const stateRef = useRef({ isPlaying, speed, passProgress });
-  stateRef.current = { isPlaying, speed, passProgress };
+   /* ── Refs to avoid stale closures in rAF ── */
+   const lastTimeRef = useRef<number>(0);
+   const requestRef = useRef<number>(0);
+   const timeoutIdsRef = useRef<number[]>([]);
+   const stateRef = useRef({ isPlaying, speed, passProgress });
+   stateRef.current = { isPlaying, speed, passProgress };
 
   /* ── Main animation loop (rAF, no stale closure) ── */
   useEffect(() => {
@@ -221,15 +240,15 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
       if (playing) {
         // Pass progress
         setPassProgress((prev) => {
-          const inc = 0.00003 * spd * (dt / 16);
+          const inc = PROGRESS_INCREMENT * spd * (dt / 16);
           const next = prev + inc;
           return next > 1 ? 0 : next;
         });
 
         // Spawn packets (~ every 200ms at speed 1)
-        if (Math.random() > 0.97) {
+        if (Math.random() > PACKET_SPAWN_THRESHOLD) {
           setPackets((prev) => [
-            ...prev.slice(-12),
+            ...prev.slice(-MAX_PACKETS),
             {
               id: nextId(),
               direction: Math.random() > 0.5 ? 'uplink' : 'downlink',
@@ -239,21 +258,23 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
         }
 
         // Spawn collisions (rarer)
-        if (Math.random() > 0.992) {
+        if (Math.random() > COLLISION_SPAWN_THRESHOLD) {
           const id = nextId();
-          const satX = 100 + prog * 800;
+          const satX = ORBIT_START_X + prog * (ORBIT_END_X - ORBIT_START_X);
           const recovered = Math.random() > 0.3;
           setCollisions((prev) => [...prev, { id, x: satX, recovered }]);
-          window.setTimeout(() => {
+          const tid = window.setTimeout(() => {
             setCollisions((prev) => prev.filter((c) => c.id !== id));
-          }, 2500);
+            timeoutIdsRef.current = timeoutIdsRef.current.filter((t) => t !== tid);
+          }, COLLISION_TIMEOUT_MS);
+          timeoutIdsRef.current.push(tid);
         }
       }
 
       // Always advance packet progress (even when paused, they fade out)
       setPackets((prev) =>
         prev
-          .map((p) => ({ ...p, progress: p.progress + 0.022 * (dt / 16) }))
+          .map((p) => ({ ...p, progress: p.progress + PACKET_PROGRESS_STEP * (dt / 16) }))
           .filter((p) => p.progress < 1)
       );
 
@@ -263,6 +284,8 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
     requestRef.current = requestAnimationFrame(animate);
     return () => {
       cancelAnimationFrame(requestRef.current);
+      timeoutIdsRef.current.forEach(clearTimeout);
+      timeoutIdsRef.current = [];
       lastTimeRef.current = 0;
     };
   }, []);
@@ -272,16 +295,22 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
     const slantRange = calculateSlantRange(passProgress);
     const dopplerShiftHz = calculateDopplerShift(passProgress);
     const latencyMs = (slantRange / SPEED_OF_LIGHT_KMS) * 1000;
-    const elevation = calculateElevationAngle(passProgress);
-    const satX = 100 + passProgress * 800;
-    const satY = 100 - (1 - Math.pow((passProgress - 0.5) * 2, 2)) * 60;
+   const elevation = calculateElevationAngle(passProgress);
+   const satX = ORBIT_START_X + passProgress * (ORBIT_END_X - ORBIT_START_X);
+   const satY =
+     ORBIT_START_Y -
+     200 * passProgress +
+     200 * passProgress * passProgress;
 
-    let phase: Phase;
-    if (passProgress < 0.15) phase = 'rising';
-    else if (passProgress < 0.4) phase = 'approaching';
-    else if (passProgress < 0.6) phase = 'zenith';
-    else if (passProgress < 0.85) phase = 'receding';
-    else phase = 'setting';
+   let phase: Phase;
+   const elev = elevation;
+   if (elev < 10) {
+     phase = passProgress < 0.5 ? 'rising' : 'setting';
+   } else if (elev < 45) {
+     phase = passProgress < 0.5 ? 'approaching' : 'receding';
+   } else {
+     phase = 'zenith';
+   }
 
     return { slantRange, dopplerShiftHz, latencyMs, elevation, satX, satY, phase };
   }, [passProgress]);
@@ -291,6 +320,10 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
   const smoothLatency = useSmoothValue(physics.latencyMs);
   const smoothSlant = useSmoothValue(physics.slantRange);
   const smoothElevation = useSmoothValue(physics.elevation);
+
+  // Doppler wave deformation factors
+  const dopplerDefX = 1 + Math.abs(physics.dopplerShiftHz / 8000);
+  const dopplerDefY = 1 - Math.abs(physics.dopplerShiftHz / 16000);
 
   /* ── Narrative ── */
   const narrative = useMemo(() => {
@@ -326,6 +359,7 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
 
   /* ── Handlers ── */
   const handleReset = useCallback(() => {
+    idCounter = 0;
     setPassProgress(0);
     setIsPlaying(false);
     setPackets([]);
@@ -488,8 +522,8 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
                 strokeWidth="3"
               />
 
-              {/* Ship */}
-              <g transform="translate(500, 260)">
+               {/* Ship */}
+               <g transform={`translate(${SHIP_X}, ${SHIP_Y})`}>
                 <circle cx="0" cy="18" r="55" fill="url(#ship-glow)" opacity="0.2" />
                 <motion.g
                   animate={{ y: [0, -1.5, 0], rotate: [-0.5, 0.5, -0.5] }}
@@ -510,15 +544,15 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
                 opacity="0.06"
               />
 
-              {/* Trail */}
-              <motion.path
-                d={`M 50 120 Q ${(50 + physics.satX) / 2} 30 ${physics.satX} ${physics.satY}`}
-                fill="none"
-                stroke="#60a5fa"
-                strokeWidth="2"
-                strokeDasharray="2,4"
-                opacity="0.25"
-              />
+               {/* Trail */}
+               <motion.path
+                 d={`M ${ORBIT_START_X} ${ORBIT_START_Y} Q ${ORBIT_CONTROL_X} ${ORBIT_CONTROL_Y} ${physics.satX} ${physics.satY}`}
+                 fill="none"
+                 stroke="#60a5fa"
+                 strokeWidth="2"
+                 strokeDasharray="2,4"
+                 opacity="0.25"
+               />
 
               {/* Footprint */}
               <motion.ellipse
@@ -540,16 +574,16 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
                 opacity="0.12"
               />
 
-              {/* Range dynamic line */}
-              <line
-                x1={physics.satX}
-                y1={physics.satY}
-                x2="500"
-                y2="260"
-                stroke="rgba(255,255,255,0.18)"
-                strokeWidth="1"
-                strokeDasharray="3,4"
-              />
+               {/* Range dynamic line */}
+               <line
+                 x1={physics.satX}
+                 y1={physics.satY}
+                 x2={SHIP_X}
+                 y2={SHIP_Y}
+                 stroke="rgba(255,255,255,0.18)"
+                 strokeWidth="1"
+                 strokeDasharray="3,4"
+               />
 
               {/* Satellite body */}
               <motion.g
@@ -572,39 +606,39 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
                 {/* Center indicator */}
                 <circle r="3" fill="#60a5fa" />
 
-                {/* Doppler waves with deformation */}
-                {isPlaying && (
-                  <>
-                    <motion.circle
-                      r="22"
-                      fill="none"
-                      stroke="#60a5fa"
-                      strokeWidth="1"
-                      style={{
-                        scaleX: 1 + Math.abs(physics.dopplerShiftHz / 8000),
-                        scaleY: 1 - Math.abs(physics.dopplerShiftHz / 16000),
-                      }}
-                      animate={{ opacity: [0.5, 0], scale: [0.8, 1.6] }}
-                      transition={{ duration: 1.4, repeat: Infinity }}
-                    />
-                    <motion.circle
-                      r="22"
-                      fill="none"
-                      stroke="#60a5fa"
-                      strokeWidth="1"
-                      style={{
-                        scaleX: 1 + Math.abs(physics.dopplerShiftHz / 8000),
-                        scaleY: 1 - Math.abs(physics.dopplerShiftHz / 16000),
-                      }}
-                      animate={{ opacity: [0.5, 0], scale: [0.8, 1.6] }}
-                      transition={{
-                        duration: 1.4,
-                        repeat: Infinity,
-                        delay: 0.7,
-                      }}
-                    />
-                  </>
-                )}
+               {/* Doppler waves with deformation */}
+               {isPlaying && (
+                 <>
+                   <motion.circle
+                     r="22"
+                     fill="none"
+                     stroke="#60a5fa"
+                     strokeWidth="1"
+                     animate={{
+                       opacity: [0.5, 0],
+                       scaleX: [0.8 * dopplerDefX, 1.6 * dopplerDefX],
+                       scaleY: [0.8 * dopplerDefY, 1.6 * dopplerDefY],
+                     }}
+                     transition={{ duration: 1.4, repeat: Infinity }}
+                   />
+                   <motion.circle
+                     r="22"
+                     fill="none"
+                     stroke="#60a5fa"
+                     strokeWidth="1"
+                     animate={{
+                       opacity: [0.5, 0],
+                       scaleX: [0.8 * dopplerDefX, 1.6 * dopplerDefX],
+                       scaleY: [0.8 * dopplerDefY, 1.6 * dopplerDefY],
+                     }}
+                     transition={{
+                       duration: 1.4,
+                       repeat: Infinity,
+                       delay: 0.7,
+                     }}
+                   />
+                 </>
+               )}
               </motion.g>
 
               {/* Packets */}
@@ -930,32 +964,82 @@ export const VdeSatSimulator = ({ lang }: { lang: Language }) => {
                 <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
                   <div className="flex justify-between items-center mb-5">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                      Slant Range vs Latency
+                      {lang === 'it' ? 'Latenza durante il Passaggio' : 'Latency over Pass'}
                     </span>
                     <span className="text-xs font-black text-slate-900 tabular-nums">
                       {smoothLatency.toFixed(2)} ms
                     </span>
                   </div>
-                  <div className="h-20 flex items-end gap-1">
-                    {Array.from({ length: 40 }).map((_, i) => {
-                      const isActive = i / 40 < passProgress;
-                      const h = Math.max(
-                        10,
-                        Math.sin(i * 0.1 + passProgress * 5) * 50 + 50
-                      );
-                      return (
-                        <div
-                          key={i}
-                          className={`flex-1 rounded-t-sm transition-all duration-300 ${
-                            isActive ? 'bg-amber-500' : 'bg-slate-200'
-                          }`}
-                          style={{
-                            height: `${h}%`,
-                            opacity: isActive ? 1 : 0.4,
-                          }}
-                        />
-                      );
-                    })}
+                  <div className="h-32 w-full relative">
+                    {/* SVG latency curve */}
+                    <svg
+                      viewBox="0 0 100 100"
+                      preserveAspectRatio="none"
+                      className="w-full h-full"
+                    >
+                      {/* Reference lines: 2 ms (top), 6 ms (mid), 10 ms (bottom) */}
+                      <line
+                        x1="0"
+                        y1="0"
+                        x2="100"
+                        y2="0"
+                        stroke="#cbd5e1"
+                        strokeWidth="0.5"
+                      />
+                      <line
+                        x1="0"
+                        y1="50"
+                        x2="100"
+                        y2="50"
+                        stroke="#cbd5e1"
+                        strokeWidth="0.5"
+                      />
+                      <line
+                        x1="0"
+                        y1="100"
+                        x2="100"
+                        y2="100"
+                        stroke="#cbd5e1"
+                        strokeWidth="0.5"
+                      />
+                      {/* Latency profile curve (pre-computed) */}
+                      <polyline
+                        points={
+                          Array.from({ length: 50 }, (_, i) => {
+                            const p = i / 49;
+                            const slant = calculateSlantRange(p);
+                            const lat = (slant / SPEED_OF_LIGHT_KMS) * 1000;
+                            const x = p * 100;
+                            // Map latency 2..10 ms → y: 0 (top) → 100 (bottom)
+                            const y = ((lat - 2) / 8) * 100;
+                            return `${x},${y}`;
+                          }).join(' ')
+                        }
+                        fill="none"
+                        stroke="#f59e0b"
+                        strokeWidth="1.5"
+                      />
+                      {/* Current position marker */}
+                      <circle
+                        cx={passProgress * 100}
+                        cy={((smoothLatency - 2) / 8) * 100}
+                        r="3"
+                        fill="#1f2937"
+                      />
+                    </svg>
+                    {/* Axis labels */}
+                    <div className="absolute bottom-0 left-0 text-[8px] text-slate-500">
+                      0%
+                    </div>
+                    <div className="absolute bottom-0 right-0 text-[8px] text-slate-500">
+                      100%
+                    </div>
+                    <div className="absolute -left-6 top-0 text-[8px] text-slate-500">
+                      10 ms
+                    </div>
+                    <div className="absolute -left-6 bottom-0 text-[8px] text-slate-500">
+                      2 ms
+                    </div>
                   </div>
                 </div>
 
