@@ -45,9 +45,10 @@ import { AisCongestionView } from './components/AisCongestionView';
 import { RModePntView } from './components/RModePntView';
 import { VDESControllerIntegration } from './components/VDESControllerIntegration';
 import { TeslaVdesProtocol } from './components/TeslaVdesProtocol';
+import TeslaMmsIntegration from './components/TeslaMmsIntegration';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<'architecture' | 'vdes' | 'simulation' | 'rmode' | 'decoder' | 'vdesat' | 'ais-congestion' | 'vdes-controller' | 'tesla-vdes'>('architecture');
+  const [viewMode, setViewMode] = useState<'architecture' | 'vdes' | 'simulation' | 'rmode' | 'decoder' | 'vdesat' | 'ais-congestion' | 'vdes-controller' | 'tesla-vdes' | 'tesla-mms-integration'>('architecture');
   const [lang, setLang] = useState<Language>('it');
   const t = TRANSLATIONS[lang];
   const [activeStepIdx, setActiveStepIdx] = useState(0);
@@ -107,13 +108,20 @@ export default function App() {
                 <Server className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">VDES Controller</span>
                </button>
-               <button 
-                 onClick={() => setViewMode('tesla-vdes')}
-                 className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'tesla-vdes' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
-               >
-                 <Lock className="w-3.5 h-3.5" />
-                 <span className="hidden sm:inline">TESLA</span>
-               </button>
+                <button 
+                  onClick={() => setViewMode('tesla-vdes')}
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'tesla-vdes' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">TESLA</span>
+                </button>
+                <button 
+                  onClick={() => setViewMode('tesla-mms-integration')}
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'tesla-mms-integration' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">TESLA+MMS</span>
+                </button>
                <button 
                  onClick={() => setViewMode('ais-congestion')}
                 className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all flex items-center gap-2 ${viewMode === 'ais-congestion' ? 'bg-white text-slate-900 shadow-lg' : 'text-white hover:bg-white/5'}`}
@@ -273,6 +281,15 @@ export default function App() {
                 exit={{ opacity: 0, x: -20 }}
               >
                 <TeslaVdesProtocol lang={lang} />
+              </motion.div>
+            ) : viewMode === 'tesla-mms-integration' ? (
+              <motion.div
+                key="tesla-mms-integration"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <TeslaMmsIntegration />
               </motion.div>
             ) : viewMode === 'ais-congestion' ? (
             <motion.div
